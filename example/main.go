@@ -3,22 +3,13 @@ package main
 import (
 	"fmt"
 	"runtime"
-	"sync"
 	"time"
 
 	"github.com/TheLazyLemur/tinyecs/ecs"
-	sys "github.com/TheLazyLemur/tinyecs/example/system"
-
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-
-var lock = &sync.Mutex{}
-
 func printMemoryUsage() {
-	lock.Lock()
-	defer lock.Unlock()
-
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
 
@@ -36,7 +27,7 @@ func bToMb(b uint64) uint64 {
 
 func main() {
 	go func() {
-		ticker := time.NewTicker(5 * time.Second)
+		ticker := time.NewTicker(1 * time.Second)
 		defer ticker.Stop()
 
 		for range ticker.C {
@@ -44,28 +35,28 @@ func main() {
 		}
 	}()
 
-	w := ecs.World{}
+	w := ecs.NewWorld()
 
-	w.AddSystem(&sys.SceneSystem{})
+	w.AddEntity(NewPlayer())
+	w.AddEntity(NewEnemy())
+
+	w.AddSystem(PlayerSystem{})
+	w.AddSystem(BulletSystem{})
+	w.AddSystem(EnemySystem{})
+	w.AddSystem(BulletCollisionSystem{})
 
 	rl.InitWindow(800, 450, "raylib [core] example - basic window")
-	rl.SetConfigFlags(rl.FlagVsyncHint)
-
 	defer rl.CloseWindow()
 
 	rl.SetTargetFPS(60)
 
 	for !rl.WindowShouldClose() {
-		lock.Lock()
-
 		rl.BeginDrawing()
 
 		rl.ClearBackground(rl.RayWhite)
+		rl.DrawText("Congrats! You created your first window!", 190, 200, 20, rl.LightGray)
 		w.Update(rl.GetFrameTime())
 
-		rl.DrawFPS(10, 10)
 		rl.EndDrawing()
-
-		lock.Unlock()
 	}
 }
